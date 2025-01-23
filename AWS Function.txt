@@ -1,0 +1,60 @@
+1)AWS Lambda Function to Add Two Numbers:
+ 
+   exports.handler = async (event) => {
+    // Extract numbers from the event
+    const num1 = event.num1;
+    const num2 = event.num2;
+
+    // Validate input
+    if (typeof num1 !== 'number' || typeof num2 !== 'number') {
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ message: 'Invalid input. Please provide two numbers.' }),
+        };
+    }
+
+    // Calculate the sum
+    const sum = num1 + num2;
+
+    // Return the result
+    return {
+        statusCode: 200,
+        body: JSON.stringify({ result: sum }),
+    };
+};
+
+
+
+
+
+
+2) AWS Lambda Function to Store a Document or PDF File in an S3 Bucket:
+
+   const AWS = require('aws-sdk');
+const s3 = new AWS.S3();
+
+exports.handler = async (event) => {
+    const bucketName = 'your-s3-bucket-name'; // Replace with your bucket name
+    const fileName = event.fileName; // The name of the file to be uploaded
+    const fileContent = Buffer.from(event.fileContent, 'base64'); // Assuming fileContent is base64 encoded
+
+    const params = {
+        Bucket: bucketName,
+        Key: fileName,
+        Body: fileContent,
+        ContentType: 'application/pdf' // Change this if you're uploading a different file type
+    };
+
+    try {
+        const data = await s3.upload(params).promise();
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ message: 'File uploaded successfully', data }),
+        };
+    } catch (error) {
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ message: 'Error uploading file', error }),
+        };
+    }
+};
