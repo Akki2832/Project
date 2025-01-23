@@ -1,0 +1,58 @@
+const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const User = require('./models/User'); // User model
+
+const router = express.Router();
+
+// Sign Up
+router.post('/signup', async (req, res) => {
+    const { username, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser  = new User({ username, password: hashedPassword });
+    await newUser .save();
+    res.status(201).send('User  created');
+});
+
+// Login
+router.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (user && await bcrypt.compare(password, user.password)) {
+        const token = jwt.sign({ id: user._id }, 'secretKey');
+        res.json({ token });
+    } else {
+        res.status(401).send('Invalid credentials');
+    }
+});
+
+const http = require('http');
+const { Server } = require('socket.io');
+
+const server = http.createServer(app);
+const io = new Server(server);
+
+io.on('connection', (socket) => {
+    console.log('User  connected');
+
+    socket.on('send message', async (messageData) => {
+        // Save message to database
+        await saveMessage(messageData);
+        // Emit message to the recipient
+        socket.to(messageData.receiverId).emit('receive message', messageData);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User  disconnected');
+    });
+});
+
+router.get('/messages/:userId', async (req, res) => {
+    const messages = await Message.find({ 
+        $or: [
+            { senderId: req.params.userId },
+            { receiverId: req.params.userId }
+        ]
+    }).sort({ createdAt: 1 });
+    res.json(messages);
+});
